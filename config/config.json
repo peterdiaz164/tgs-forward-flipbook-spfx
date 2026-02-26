@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "tgs-forward-flipbook-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/tgsForwardFlipbook/TgsForwardFlipbookWebPart.js",
+          "manifest": "./src/webparts/tgsForwardFlipbook/TgsForwardFlipbookWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "TgsForwardFlipbookWebPartStrings": "lib/webparts/tgsForwardFlipbook/loc/{locale}.js"
+  }
+}

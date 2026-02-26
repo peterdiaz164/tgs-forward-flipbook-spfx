@@ -1,0 +1,286 @@
+/* ──────────────────────────────────────────────────
+   FlipbookViewer — 3D CSS page-flip styles
+   ────────────────────────────────────────────────── */
+
+.viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #e8e8e8;
+  user-select: none;
+  touch-action: pan-y pinch-zoom;
+  outline: none;
+}
+
+.bookWrapper {
+  perspective: 1800px;
+  perspective-origin: center center;
+}
+
+/* ── Book (holds left + right slots) ─────────────── */
+.book {
+  position: relative;
+  display: flex;
+  transform-style: preserve-3d;
+  box-shadow:
+    0 2px 20px rgba(0, 0, 0, 0.18),
+    0 0 4px rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+/* ── Page slots ──────────────────────────────────── */
+.pageSlot {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+}
+
+.leftSlot {
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.rightSlot {
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* spine shadow (the gutter between left and right pages) */
+.spineShadow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.04) 35%,
+    rgba(0, 0, 0, 0.08) 50%,
+    rgba(0, 0, 0, 0.04) 65%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Turning leaf ────────────────────────────────── */
+.turningLeaf {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transform-style: preserve-3d;
+  z-index: 10;
+  will-change: transform;
+}
+
+.turningForward {
+  left: 50%;
+  width: 50%;
+  transform-origin: left center;
+}
+
+.turningBackward {
+  left: 0;
+  width: 50%;
+  transform-origin: right center;
+}
+
+.turningForwardSingle {
+  left: 0;
+  width: 100%;
+  transform-origin: left center;
+}
+
+.turningBackwardSingle {
+  left: 0;
+  width: 100%;
+  transform-origin: right center;
+}
+
+/* Front / back faces of the turning leaf */
+.leafFace {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  background: #fff;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+}
+
+.leafBack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  background: #fff;
+  overflow: hidden;
+  transform: rotateY(180deg);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+}
+
+/* ── Shadow / lighting overlays ──────────────────── */
+
+/* Shadow cast by the turning page onto the page underneath */
+.underPageShadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.underShadowForward {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.35) 0%, transparent 55%);
+}
+
+.underShadowBackward {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.35) 0%, transparent 55%);
+}
+
+/* Fold-crease gradient on the turning page faces */
+.foldGradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.foldGradientFrontForward {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.18) 0%, transparent 40%);
+}
+
+.foldGradientBackForward {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.12) 0%, transparent 40%);
+}
+
+.foldGradientFrontBackward {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.18) 0%, transparent 40%);
+}
+
+.foldGradientBackBackward {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.12) 0%, transparent 40%);
+}
+
+/* Bright edge highlight along the fold */
+.edgeHighlight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.55) 20%,
+    rgba(255, 255, 255, 0.55) 80%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
+  z-index: 12;
+}
+
+.edgeHighlightForward {
+  left: 0;
+}
+
+.edgeHighlightBackward {
+  right: 0;
+}
+
+/* ── Page-edge thickness indicators ──────────────── */
+.pageEdge {
+  position: absolute;
+  top: 3%;
+  bottom: 3%;
+  width: 3px;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    to right,
+    #d4d4d4 0%,
+    #e2e2e2 50%,
+    #d4d4d4 100%
+  );
+}
+
+.pageEdgeLeft {
+  left: 0;
+}
+
+.pageEdgeRight {
+  right: 0;
+}
+
+/* ── Corner-hover cue ────────────────────────────── */
+.cornerCue {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 3;
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 44px 44px;
+    border-color: transparent transparent #d8d8d8 transparent;
+    filter: drop-shadow(-1px -1px 2px rgba(0, 0, 0, 0.08));
+  }
+}
+
+.cornerCueVisible {
+  opacity: 1;
+}
+
+/* ── Blank page placeholder ──────────────────────── */
+.blankPage {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+}

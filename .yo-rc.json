@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "version": "1.18.2",
+    "libraryName": "tgs-forward-flipbook-spfx",
+    "libraryId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "tgs-forward-flipbook-spfx",
+    "solutionShortDescription": "Premium image flipbook for SharePoint",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart",
+    "framework": "react",
+    "componentName": "TgsForwardFlipbook",
+    "componentDescription": "Premium image flipbook viewer for SharePoint"
+  }
+}

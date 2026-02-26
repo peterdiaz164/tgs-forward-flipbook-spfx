@@ -1,0 +1,50 @@
+.container {
+  position: relative;
+  width: 100%;
+  min-height: 480px;
+  height: 680px;
+  max-height: 90vh;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #e8e8e8;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* fullscreen override */
+.container:fullscreen,
+.container:-webkit-full-screen {
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+}
+
+.configPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+  text-align: center;
+  color: #555;
+}
+
+.configPromptIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.configPromptTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.configPromptText {
+  font-size: 14px;
+  color: #777;
+  margin: 0;
+  max-width: 400px;
+  line-height: 1.5;
+}
