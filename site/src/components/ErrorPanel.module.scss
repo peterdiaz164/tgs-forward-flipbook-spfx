@@ -1,0 +1,54 @@
+.errorPanel {
+  padding: 24px;
+  max-width: 640px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #a80000;
+  margin: 0 0 12px;
+}
+
+.message {
+  font-size: 14px;
+  color: #333;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.details {
+  background: #f6f6f6;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.detailTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin: 0 0 8px;
+}
+
+.probeRow {
+  font-size: 12px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  color: #444;
+  padding: 4px 0;
+  border-bottom: 1px solid #e0e0e0;
+  word-break: break-all;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.valid {
+  color: #107c10;
+}
+
+.invalid {
+  color: #a80000;
+}
