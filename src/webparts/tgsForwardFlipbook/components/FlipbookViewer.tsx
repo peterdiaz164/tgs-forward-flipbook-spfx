@@ -112,7 +112,9 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
   const isMobile = vpSize.w < 768;
   const isBookSpread = !isMobile && !singlePageOnDesktop;
   const isCoverSingle = isBookSpread && currentPage === 0;
-  const renderSingle = isMobile || singlePageOnDesktop || isCoverSingle;
+  const isBackCoverSingle = isBookSpread && currentPage > 0
+    && currentPage === totalPages - 1 && currentPage % 2 === 1;
+  const renderSingle = isMobile || singlePageOnDesktop || isCoverSingle || isBackCoverSingle;
   const pageAR = imageCache.aspectRatio || 0.7727;
   const dims = calcDims(vpSize.w, vpSize.h, pageAR, renderSingle, zoom);
 
@@ -171,6 +173,7 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
           if (flipDirection === 'forward') {
             return prev + (renderSingle ? 1 : 2);
           }
+          if (isBackCoverSingle) return prev - 2;
           return Math.max(0, prev - (renderSingle ? 1 : (prev <= 1 ? 1 : 2)));
         });
       }
@@ -187,7 +190,7 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
       });
     });
     return () => { cancelled = true; };
-  }, [flipState, flipTarget, flipDirection, renderSingle]);
+  }, [flipState, flipTarget, flipDirection, renderSingle, isBackCoverSingle]);
 
   /* ── Navigate ───────────────────────────────────── */
   const goForward = React.useCallback(() => {
@@ -225,13 +228,14 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
         if (flipDirection === 'forward') {
           return prev + (renderSingle ? 1 : 2);
         }
+        if (isBackCoverSingle) return prev - 2;
         return Math.max(0, prev - (renderSingle ? 1 : (prev <= 1 ? 1 : 2)));
       });
     }
     setFlipState('idle');
     setFlipAngle(0);
     setFlipTarget(null);
-  }, [flipTarget, flipDirection, renderSingle]);
+  }, [flipTarget, flipDirection, renderSingle, isBackCoverSingle]);
 
   /* ── Gesture callbacks ──────────────────────────── */
   const gestureCallbacks = React.useMemo(() => ({
@@ -453,7 +457,7 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
         <div className={styles.debugPanel}>
           {`P=${P} cur=${currentPage} base=${flipBasePageRef.current}\n`}
           {`L=${leftSlotPage} R=${rightSlotPage} tF=${turningFront} tB=${turningBack}\n`}
-          {`${flipState} ${flipDirection} single=${renderSingle} cover=${isCoverSingle}`}
+          {`${flipState} ${flipDirection} single=${renderSingle} cover=${isCoverSingle} backCover=${isBackCoverSingle}`}
         </div>
       )}
 
