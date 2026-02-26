@@ -21,12 +21,14 @@
     "types": [
       "webpack-env"
     ],
-    "lib": [
-      "es5",
-      "dom",
-      "es2015.collection",
-      "es2015.promise"
-    ]
+"lib": [
+  "es5",
+  "dom",
+  "es2015.core",
+  "es2015.collection",
+  "es2015.promise",
+  "es2017.string"
+]
   },
   "include": [
     "src/**/*.ts",

@@ -69,8 +69,19 @@ function calcDims(
 }
 
 /* ================================================================
+   Helper — normalise page index for book-spread mode
+   ================================================================ */
+function normalizeSpreadIndex(page: number): number {
+  if (page <= 0) return 0;
+  if (page % 2 === 0) return page - 1;
+  return page;
+}
+
+/* ================================================================
    Component
    ================================================================ */
+const DEBUG_OVERLAY = false;
+
 const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
   const { pages, totalPages, singlePageOnDesktop, imageCache, pdfUrl, showDownloadButton, domElement } = props;
 
@@ -95,19 +106,27 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
   const transitionDur = React.useRef(0.7);
   const flipAngleRef = React.useRef(0);
   flipAngleRef.current = flipAngle;
+  const flipBasePageRef = React.useRef(0);
 
   /* ── Derived values ─────────────────────────────── */
   const isMobile = vpSize.w < 768;
-  const isSingle = singlePageOnDesktop || isMobile;
+  const isBookSpread = !isMobile && !singlePageOnDesktop;
+  const isCoverSingle = isBookSpread && currentPage === 0;
+  const renderSingle = isMobile || singlePageOnDesktop || isCoverSingle;
   const pageAR = imageCache.aspectRatio || 0.7727;
-  const dims = calcDims(vpSize.w, vpSize.h, pageAR, isSingle, zoom);
+  const dims = calcDims(vpSize.w, vpSize.h, pageAR, renderSingle, zoom);
 
-  const canGoForward = isSingle
+  const canGoForward = renderSingle
     ? currentPage < totalPages - 1
     : currentPage + 2 < totalPages;
-  const canGoBackward = isSingle ? currentPage > 0 : currentPage >= 2;
-  const totalSpreads = isSingle ? totalPages : Math.ceil(totalPages / 2);
-  const currentSpread = isSingle ? currentPage : Math.floor(currentPage / 2);
+  const canGoBackward = renderSingle ? currentPage > 0 : currentPage >= 1;
+  const controlsSingle = isMobile || singlePageOnDesktop;
+  const totalSpreads = controlsSingle
+    ? totalPages
+    : (totalPages <= 1 ? 1 : 1 + Math.ceil((totalPages - 1) / 2));
+  const currentSpread = controlsSingle
+    ? currentPage
+    : Math.ceil(currentPage / 2);
 
   /* ── ResizeObserver ─────────────────────────────── */
   React.useEffect(() => {
@@ -147,11 +166,12 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
     const current = flipAngleRef.current;
 
     if (Math.abs(current - target) < 0.5) {
-      /* Already at the target — complete immediately (no CSS transition fires). */
       if (flipTarget === 'complete') {
         setCurrentPage(prev => {
-          const step = isSingle ? 1 : 2;
-          return flipDirection === 'forward' ? prev + step : prev - step;
+          if (flipDirection === 'forward') {
+            return prev + (renderSingle ? 1 : 2);
+          }
+          return Math.max(0, prev - (renderSingle ? 1 : (prev <= 1 ? 1 : 2)));
         });
       }
       setFlipState('idle');
@@ -160,8 +180,6 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
       return;
     }
 
-    /* Double-rAF ensures the browser has painted the current state (with
-       the CSS transition property active) before we change the angle. */
     let cancelled = false;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -169,52 +187,57 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
       });
     });
     return () => { cancelled = true; };
-  }, [flipState, flipTarget, flipDirection, isSingle]);
+  }, [flipState, flipTarget, flipDirection, renderSingle]);
 
   /* ── Navigate ───────────────────────────────────── */
   const goForward = React.useCallback(() => {
     if (flipState !== 'idle' || !canGoForward) return;
+    flipBasePageRef.current = currentPage;
     transitionDur.current = 0.7;
     setFlipDirection('forward');
     setFlipTarget('complete');
     setFlipAngle(0);
     setFlipState('animating');
-  }, [flipState, canGoForward]);
+  }, [flipState, canGoForward, currentPage]);
 
   const goBackward = React.useCallback(() => {
     if (flipState !== 'idle' || !canGoBackward) return;
+    flipBasePageRef.current = currentPage;
     transitionDur.current = 0.7;
     setFlipDirection('backward');
     setFlipTarget('complete');
     setFlipAngle(0);
     setFlipState('animating');
-  }, [flipState, canGoBackward]);
+  }, [flipState, canGoBackward, currentPage]);
 
   const jumpToPage = React.useCallback((page: number) => {
     if (flipState !== 'idle') return;
     const clamped = Math.max(0, Math.min(page, totalPages - 1));
-    const aligned = isSingle ? clamped : clamped - (clamped % 2);
+    const aligned = isBookSpread ? normalizeSpreadIndex(clamped) : clamped;
     setCurrentPage(aligned);
-  }, [flipState, totalPages, isSingle]);
+  }, [flipState, totalPages, isBookSpread]);
 
   /* ── TransitionEnd handler ──────────────────────── */
   const onTransitionEnd = React.useCallback((e: React.TransitionEvent) => {
     if (e.propertyName !== 'transform') return;
     if (flipTarget === 'complete') {
       setCurrentPage(prev => {
-        const step = isSingle ? 1 : 2;
-        return flipDirection === 'forward' ? prev + step : prev - step;
+        if (flipDirection === 'forward') {
+          return prev + (renderSingle ? 1 : 2);
+        }
+        return Math.max(0, prev - (renderSingle ? 1 : (prev <= 1 ? 1 : 2)));
       });
     }
     setFlipState('idle');
     setFlipAngle(0);
     setFlipTarget(null);
-  }, [flipTarget, flipDirection, isSingle]);
+  }, [flipTarget, flipDirection, renderSingle]);
 
   /* ── Gesture callbacks ──────────────────────────── */
   const gestureCallbacks = React.useMemo(() => ({
     onDragStart: (dir: 'left' | 'right') => {
       if (flipState !== 'idle') return;
+      flipBasePageRef.current = currentPage;
       if (dir === 'left' && canGoForward) {
         setFlipDirection('forward');
         setFlipState('dragging');
@@ -295,14 +318,14 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
   const toggleFitWidth = React.useCallback(() => {
     setFitWidth(prev => {
       if (!prev) {
-        const target = (vpSize.w - PADDING * 2) / (calcDims(vpSize.w, vpSize.h, pageAR, isSingle, 1).bookWidth);
+        const target = (vpSize.w - PADDING * 2) / (calcDims(vpSize.w, vpSize.h, pageAR, renderSingle, 1).bookWidth);
         setZoom(target);
       } else {
         setZoom(1);
       }
       return !prev;
     });
-  }, [vpSize, pageAR, isSingle]);
+  }, [vpSize, pageAR, renderSingle]);
 
   /* ────────────────────────────────────────────────
      Render helpers
@@ -325,18 +348,18 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
       : `transform ${transitionDur.current}s cubic-bezier(0.22,0.61,0.36,1)`;
 
   /* ── Determine slot contents ────────────────────── */
-  const P = currentPage;
+  const P = flipState !== 'idle' ? flipBasePageRef.current : currentPage;
   let leftSlotPage: number;
   let rightSlotPage: number;
   let turningFront: number;
   let turningBack: number;
 
   if (flipState !== 'idle') {
-    if (isSingle) {
+    if (renderSingle) {
       turningFront = P;
       turningBack = flipDirection === 'forward' ? P + 1 : P - 1;
       leftSlotPage = -1;
-      rightSlotPage = flipDirection === 'forward' ? P + 1 : P - 1;
+      rightSlotPage = P;
     } else if (flipDirection === 'forward') {
       leftSlotPage = P;
       rightSlotPage = P + 3;
@@ -349,15 +372,15 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
       turningBack = P - 1;
     }
   } else {
-    leftSlotPage = isSingle ? -1 : P;
-    rightSlotPage = isSingle ? P : P + 1;
+    leftSlotPage = renderSingle ? -1 : P;
+    rightSlotPage = renderSingle ? P : P + 1;
     turningFront = -1;
     turningBack = -1;
   }
 
   /* ── Turning leaf CSS class ─────────────────────── */
   let leafClass = styles.turningLeaf + ' ';
-  if (isSingle) {
+  if (renderSingle) {
     leafClass += flipDirection === 'forward'
       ? styles.turningForwardSingle
       : styles.turningBackwardSingle;
@@ -412,7 +435,7 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
         totalPages={totalPages}
         currentSpread={currentSpread}
         totalSpreads={totalSpreads}
-        isSingle={isSingle}
+        isSingle={controlsSingle}
         zoom={zoom}
         fitWidth={fitWidth}
         isFullscreen={isFullscreen}
@@ -424,6 +447,15 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
         onFullscreen={toggleFullscreen}
         onPageJump={jumpToPage}
       />
+
+      {/* ── Debug info panel ──────────────────────── */}
+      {DEBUG_OVERLAY && (
+        <div className={styles.debugPanel}>
+          {`P=${P} cur=${currentPage} base=${flipBasePageRef.current}\n`}
+          {`L=${leftSlotPage} R=${rightSlotPage} tF=${turningFront} tB=${turningBack}\n`}
+          {`${flipState} ${flipDirection} single=${renderSingle} cover=${isCoverSingle}`}
+        </div>
+      )}
 
       {/* ── Book ──────────────────────────────────── */}
       <div className={styles.bookWrapper}>
@@ -437,67 +469,81 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
           }}
         >
           {/* Left page slot (spread mode only) */}
-          {!isSingle && (
+          {!renderSingle && (
             <div className={`${styles.pageSlot} ${styles.leftSlot}`} style={{ width: dims.pageWidth, height: dims.pageHeight }}>
               {renderPageImg(leftSlotPage)}
               {flipState !== 'idle' && flipDirection === 'backward' && (
                 <div className={underShadowClass} style={{ opacity: shadowOpacity }} />
               )}
+              {DEBUG_OVERLAY && <div className={styles.debugLabel} style={{ background: 'rgba(0,80,200,.75)' }}>LEFT slot:{leftSlotPage}</div>}
             </div>
           )}
 
           {/* Right / single page slot */}
           <div
-            className={`${styles.pageSlot} ${isSingle ? '' : styles.rightSlot}`}
-            style={{ width: isSingle ? dims.bookWidth : dims.pageWidth, height: dims.pageHeight }}
+            className={`${styles.pageSlot} ${renderSingle ? '' : styles.rightSlot}`}
+            style={{ width: renderSingle ? dims.bookWidth : dims.pageWidth, height: dims.pageHeight }}
           >
             {renderPageImg(rightSlotPage)}
-            {flipState !== 'idle' && (isSingle || flipDirection === 'forward') && (
+            {flipState !== 'idle' && (renderSingle || flipDirection === 'forward') && (
               <div className={underShadowClass} style={{ opacity: shadowOpacity }} />
             )}
+            {DEBUG_OVERLAY && <div className={styles.debugLabel} style={{ background: 'rgba(0,140,0,.75)' }}>RIGHT slot:{rightSlotPage}</div>}
           </div>
 
           {/* Spine shadow (spread mode only) */}
-          {!isSingle && <div className={styles.spineShadow} />}
+          {!renderSingle && <div className={styles.spineShadow} />}
 
           {/* Page-edge thickness indicators */}
-          {!isSingle && canGoBackward && (
+          {!renderSingle && canGoBackward && (
             <div className={`${styles.pageEdge} ${styles.pageEdgeLeft}`} />
           )}
-          {!isSingle && canGoForward && (
+          {!renderSingle && canGoForward && (
             <div className={`${styles.pageEdge} ${styles.pageEdgeRight}`} />
           )}
 
           {/* ── Turning leaf ──────────────────────── */}
-          {flipState !== 'idle' && (
-            <div
-              ref={turningLeafRef}
-              className={leafClass}
-              style={{
-                transform: `rotateY(${leafRotate}deg)`,
-                transition: leafTransition
-              }}
-              onTransitionEnd={onTransitionEnd}
-            >
-              {/* Front face */}
-              <div className={styles.leafFace}>
-                {renderPageImg(turningFront)}
-                <div className={foldFrontClass} style={{ opacity: shadowOpacity }} />
-              </div>
+          {flipState !== 'idle' && (() => {
+            const leaf = (
+              <div
+                ref={turningLeafRef}
+                className={leafClass}
+                style={{
+                  transform: `rotateY(${leafRotate}deg)`,
+                  transition: leafTransition
+                }}
+                onTransitionEnd={onTransitionEnd}
+              >
+                {/* Front face */}
+                <div className={styles.leafFace}>
+                  {renderPageImg(turningFront)}
+                  <div className={foldFrontClass} style={{ opacity: shadowOpacity }} />
+                  {DEBUG_OVERLAY && <div className={styles.debugLabel} style={{ background: 'rgba(220,120,0,.85)' }}>FRONT:{turningFront}</div>}
+                </div>
 
-              {/* Back face */}
-              <div className={styles.leafBack}>
-                {renderPageImg(turningBack)}
-                <div className={foldBackClass} style={{ opacity: shadowOpacity }} />
-              </div>
+                {/* Back face */}
+                <div className={styles.leafBack}>
+                  {renderPageImg(turningBack)}
+                  <div className={foldBackClass} style={{ opacity: shadowOpacity }} />
+                  {DEBUG_OVERLAY && <div className={styles.debugLabel} style={{ background: 'rgba(200,0,0,.85)' }}>BACK:{turningBack}</div>}
+                </div>
 
-              {/* Edge highlight */}
-              <div className={edgeHighlightClass} style={{ opacity: edgeOpacity }} />
-            </div>
-          )}
+                {/* Edge highlight */}
+                <div className={edgeHighlightClass} style={{ opacity: edgeOpacity }} />
+              </div>
+            );
+
+            if (renderSingle) return leaf;
+
+            const clipClass = flipDirection === 'forward'
+              ? styles.turningClipForward
+              : styles.turningClipBackward;
+
+            return <div className={clipClass}>{leaf}</div>;
+          })()}
 
           {/* Corner hover cue */}
-          {!isSingle && (
+          {isBookSpread && (
             <div className={`${styles.cornerCue} ${cornerHint ? styles.cornerCueVisible : ''}`} />
           )}
         </div>

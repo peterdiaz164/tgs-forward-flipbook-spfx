@@ -37,6 +37,7 @@
   position: relative;
   overflow: hidden;
   background: #fff;
+  z-index: 1;
 
   img {
     display: block;
@@ -50,6 +51,7 @@
 
 .leftSlot {
   border-right: 1px solid rgba(0, 0, 0, 0.06);
+  transform: translateZ(0.5px);
 }
 
 .rightSlot {
@@ -86,16 +88,46 @@
   will-change: transform;
 }
 
+/* In spread mode these live inside a clip wrapper that is already
+   positioned at the correct half, so they fill the wrapper 100 %. */
 .turningForward {
-  left: 50%;
-  width: 50%;
+  left: 0;
+  width: 100%;
   transform-origin: left center;
 }
 
 .turningBackward {
   left: 0;
-  width: 50%;
+  width: 100%;
   transform-origin: right center;
+}
+
+/* ── Clip wrappers — prevent the rotating leaf from bleeding into
+   the opposite half of the book during a 3-D flip. Each wrapper
+   provides its own perspective so the 3-D effect is preserved
+   inside the clipped region. ──────────────────────────────────── */
+.turningClipForward {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 10;
+  perspective: 1800px;
+  perspective-origin: left center;
+}
+
+.turningClipBackward {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 10;
+  perspective: 1800px;
+  perspective-origin: right center;
 }
 
 .turningForwardSingle {
@@ -118,6 +150,8 @@
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transform: translateZ(0.1px);
   background: #fff;
   overflow: hidden;
 
@@ -138,9 +172,10 @@
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  transform-style: preserve-3d;
   background: #fff;
   overflow: hidden;
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(0.1px);
 
   img {
     display: block;
@@ -283,4 +318,32 @@
   width: 100%;
   height: 100%;
   background: #fff;
+}
+
+/* ── Debug overlay (toggle via DEBUG_OVERLAY flag) ── */
+.debugLabel {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font: bold 10px / 1.3 monospace;
+  color: #fff;
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.debugPanel {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.82);
+  color: #0f0;
+  font: 10px / 1.4 monospace;
+  pointer-events: none;
+  z-index: 200;
+  white-space: pre;
 }

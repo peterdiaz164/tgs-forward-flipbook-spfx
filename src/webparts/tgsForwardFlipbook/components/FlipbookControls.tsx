@@ -59,6 +59,8 @@ const FlipbookControls: React.FC<IFlipbookControlsProps> = (props) => {
   let pageLabel: string;
   if (isSingle) {
     pageLabel = `Page ${currentPage + 1} / ${totalPages}`;
+  } else if (currentPage === 0) {
+    pageLabel = `Page 1 / ${totalPages}`;
   } else {
     const left = currentPage + 1;
     const right = Math.min(currentPage + 2, totalPages);
