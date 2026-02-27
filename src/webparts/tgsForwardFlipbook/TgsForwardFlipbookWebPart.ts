@@ -48,8 +48,7 @@ export default class TgsForwardFlipbookWebPart extends BaseClientSideWebPart<ITg
         pdfUrl: this.properties.pdfUrl || '',
         showDownloadButton: this.properties.showDownloadButton !== false,
         spHttpClient: this.context.spHttpClient,
-        webUrl: this.context.pageContext.web.absoluteUrl,
-        domElement: this.domElement
+        webUrl: this.context.pageContext.web.absoluteUrl
       }
     );
 

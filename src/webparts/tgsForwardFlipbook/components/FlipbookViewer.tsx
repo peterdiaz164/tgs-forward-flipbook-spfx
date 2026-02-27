@@ -15,7 +15,6 @@ export interface IFlipbookViewerProps {
   imageCache: ImagePreloader;
   pdfUrl: string;
   showDownloadButton: boolean;
-  domElement: HTMLElement;
 }
 
 /* ================================================================
@@ -83,7 +82,7 @@ function normalizeSpreadIndex(page: number): number {
 const DEBUG_OVERLAY = false;
 
 const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
-  const { pages, totalPages, singlePageOnDesktop, imageCache, pdfUrl, showDownloadButton, domElement } = props;
+  const { pages, totalPages, singlePageOnDesktop, imageCache, pdfUrl, showDownloadButton } = props;
 
   /* ── Core state ─────────────────────────────────── */
   const [currentPage, setCurrentPage] = React.useState(0);
@@ -300,9 +299,9 @@ const FlipbookViewer: React.FC<IFlipbookViewerProps> = (props) => {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => { /* noop */ });
     } else {
-      (domElement || viewportRef.current)?.requestFullscreen?.().catch(() => { /* noop */ });
+      viewportRef.current?.requestFullscreen?.().catch(() => { /* noop */ });
     }
-  }, [domElement]);
+  }, []);
 
   /* ── Zoom / fit-width ───────────────────────────── */
   const zoomIn = React.useCallback(() => {

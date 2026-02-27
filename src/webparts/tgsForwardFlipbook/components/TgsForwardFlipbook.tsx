@@ -15,7 +15,7 @@ const TgsForwardFlipbook: React.FC<ITgsForwardFlipbookProps> = (props) => {
   const {
     pagesFolderUrl, filePrefix, fileExtension, startIndex,
     zeroPad, maxPages, forcePageCount, singlePageOnDesktop,
-    pdfUrl, showDownloadButton, webUrl, domElement
+    pdfUrl, showDownloadButton, webUrl
   } = props;
 
   const [phase, setPhase] = React.useState<LoadPhase>('init');
@@ -130,7 +130,6 @@ const TgsForwardFlipbook: React.FC<ITgsForwardFlipbookProps> = (props) => {
           imageCache={imageCache}
           pdfUrl={pdfUrl}
           showDownloadButton={showDownloadButton}
-          domElement={domElement}
         />
       )}
     </div>

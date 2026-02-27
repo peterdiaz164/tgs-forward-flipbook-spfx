@@ -13,5 +13,4 @@ export interface ITgsForwardFlipbookProps {
   showDownloadButton: boolean;
   spHttpClient: SPHttpClient;
   webUrl: string;
-  domElement: HTMLElement;
 }
